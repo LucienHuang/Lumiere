@@ -5,6 +5,7 @@
 const int MPU_addr = 0x68;
 int16_t AcX, AcY, AcZ, Tmp, GyX, GyY, GyZ;
 
+//Controller
 int state = 0;
 bool power = false;
 bool state1Started = false;
@@ -34,6 +35,7 @@ void setup() {
   strip.show();  // Turn all LEDs off ASAP
 }
 
+//Colors
 uint32_t color = 0x000000;
 uint32_t color1 = 0x000000;
 uint32_t color2 = 0x000000;
@@ -43,7 +45,6 @@ uint32_t color5 = 0x000000;
 uint32_t color6 = 0x000000;
 uint32_t color7 = 0x000000;
 
-//uint32_t breath = 0x000000;
 uint32_t blue = 0x00;
 uint32_t green = 0x00;
 uint32_t red = 0xFF;
@@ -72,7 +73,10 @@ void loop() {
   GyY = Wire.read() << 8 | Wire.read(); // 0x45 (GYRO_YOUT_H) & 0x46 (GYRO_YOUT_L)
   GyZ = Wire.read() << 8 | Wire.read(); // 0x47 (GYRO_ZOUT_H) & 0x48 (GYRO_ZOUT_L)
 
+  //This is detecting which side is down and which is up
   if (AcZ > 13000 && abs(AcX) < 5000 && abs(AcY) < 5000) {
+    
+    //every time it turns to mode 1, reset the starting color
     if (state1Started == false) {
       blue = 0x00;
       green = 0x00;
@@ -103,7 +107,8 @@ void loop() {
   if (state == 0) {
     phase = 0;
   } else if (state == 1) {
-    //state 1
+    //state 1 - Chroma
+    //Detecting whether it's turning clockwise or anti-clockwise
     if (GyZ > 10000) {
       power = false;
     } else if (GyZ < -10000 && power == false) {
@@ -115,6 +120,7 @@ void loop() {
       delay(300);
     }
 
+    //Different speed of color changing
     if (phase == 0) {
       spd1 = 0x0F;
     } else if (phase == 1) {
@@ -125,6 +131,7 @@ void loop() {
       spd1 = 0x05;
     }
 
+    //Chroma color changing
     if (red == 0xFF && green < 0xFF && blue == 0x00) {
       green += spd1;
     } else if (red > 0x00 && green == 0xFF && blue == 0x00) {
@@ -146,7 +153,7 @@ void loop() {
     //state 1 end
 
   } else if (state == 2) {
-    //state 2
+    //state 2 - Fire
     if (GyZ > 10000 && power == false) {
       power = true;
     } else if (GyZ < -10000) {
@@ -157,6 +164,7 @@ void loop() {
       delay(300);
     }
 
+    //Different fire colors, default red / yellow
     if (phase == 0) {
       color = 0x4BFF25 ;
       color1 = 0x060004;
@@ -177,7 +185,7 @@ void loop() {
 
     //state 2 end
   } else if (state == 3) {
-    //state 3
+    //state 3 - Wave
     if (GyX > 10000) {
       power = false;
     } else if (GyX < -10000 && power == false) {
@@ -188,6 +196,7 @@ void loop() {
       delay(300);
     }
 
+    //Different wave colors, default blue
     if (phase == 0) {
       color = 0x110011;
     } else if (phase == 1) {
@@ -200,7 +209,7 @@ void loop() {
 
     //state 3 end
   } else if (state == 4) {
-    //state 4
+    //state 4 - Heartbeat
     if (GyX > 10000 && power == false) {
       power = true;
     } else if (GyX < -10000) {
@@ -211,7 +220,7 @@ void loop() {
       delay(300);
     }
 
-
+    //Different colors - default pink
     if (phase == 0) {
       color = 0x1AFF3E;
       color1 = 0x00;
@@ -228,7 +237,7 @@ void loop() {
 
     //state 4 end
   } else if (state == 5) {
-    //state 5
+    //state 5 - Star
     if (GyY > 10000) {
       power = false;
     } else if (GyY < -10000 && power == false) {
@@ -239,6 +248,7 @@ void loop() {
       delay(300);
     }
 
+    //Different number of the pixels on and off
     if (phase == 0) {
       brt = 9;
     } else if (phase == 1) {
@@ -252,7 +262,7 @@ void loop() {
 
     //state 5 end
   } else if (state == 6) {
-    //state 6
+    //state 6 - Rainbow
     if (GyY > 10000 && power == false) {
       power = true;
     } else if (GyY < -10000) {
@@ -263,7 +273,7 @@ void loop() {
       delay(300);
     }
 
-
+    //Different colors, default rainbow color
     if (phase == 0) {
       color1 = 0x00FF00;
       color2 = 0x91FF00;
@@ -304,14 +314,15 @@ void loop() {
   Serial.println(state);
 
   if (power && state == 1) {
-    //state 1 power
+    //state 1 power - chroma
     for (int i = 0; i < NUMPIXELS; i++) {
       strip.setPixelColor(i, color);
       strip.show();
     }
     //state 1 end power
   } else if (power && state == 2) {
-    //state 2 power
+    //state 2 power - fire
+    //random number dicides the height of the fire
     ran = random(50);
     for (int i = 0; i < NUMPIXELS; i++) {
       if (i < 10 + ran) {
@@ -323,8 +334,8 @@ void loop() {
     }
     //state 2 end power
   } else if (power && state == 3) {
-    //state 3 power
-
+    //state 3 power - wave
+    
     head++;
     if (head > 14) head = 0;
 
@@ -337,8 +348,8 @@ void loop() {
 
     //state 3 end power
   } else if (power && state == 4) {
-    //state 4 power
-    int bounce;
+    //state 4 power - heartbeat
+    
     heartbeat++;
     if (heartbeat > 7) {
       heartbeat = 0;
@@ -358,8 +369,9 @@ void loop() {
     }
     //state 4 end power
   } else if (power && state == 5) {
-    //state 5 power
-
+    //state 5 power - star
+    //random star color
+    
     uint32_t ranB, ranG, ranR;
     ranB = random(0x00, 0xFF);
     ranG = random(0x00, 0xFF);
@@ -367,6 +379,7 @@ void loop() {
 
     color2 = ranB + ranG * 0x010000 + ranR * 0x0100;
 
+    //brt decides how many pixels will be lit on
     for (int i = 0; i < NUMPIXELS; i++) {
       int ranNum = random(0, brt);
       if (ranNum < 2) {
@@ -380,7 +393,7 @@ void loop() {
     delay(100);
     //state 5 end power
   } else if (power && state == 6) {
-    //state 6 power
+    //state 6 power - rainbow
     head ++;
     if (head > 7) head = 0;
 
@@ -411,7 +424,7 @@ void loop() {
       strip.show();
     }
   } else {
-    //state between
+    //state during rotating
     for (int i = NUMPIXELS - 1; i >= 0; i--) {
       strip.setPixelColor(i, 0x505050);
       strip.show();
